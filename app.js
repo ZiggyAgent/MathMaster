@@ -85,8 +85,8 @@ function say(text, rate = 0.95) {
 // ---------------------------------------------------------------------------
 function parseRational(s) {
   s = normalizeAnswer(s).replace(/[¢°]/g, "");
-  let m = s.match(/^(-?\d+)\.(\d+)$/);
-  if (m) { const dec = m[2]; return { n: parseInt(m[1] + dec, 10), d: 10 ** dec.length }; }
+  let m = s.match(/^(-?)(\d*)\.(\d+)$/);
+  if (m) { const dec = m[3]; return { n: parseInt(m[1] + (m[2] || "0") + dec, 10), d: 10 ** dec.length }; }
   m = s.match(/^(-?\d+)$/);
   if (m) return { n: parseInt(m[1], 10), d: 1 };
   m = s.match(/^(-?\d+)\/(\d+)$/);
