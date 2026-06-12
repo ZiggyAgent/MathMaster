@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>MathMaster — Learn math, level up!</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🧮</text></svg>">
+</head>
+<body>
+<div class="app">
+
+  <!-- Sign in / sign up -->
+  <section class="screen" id="screen-auth" hidden>
+    <h1 class="logo">🧮 MathMaster</h1>
+    <p class="tagline">Learn · Practice · Level Up</p>
+    <div class="card">
+      <h2>Who's playing?</h2>
+      <form id="auth-form">
+        <label>Your name
+          <input id="auth-name" type="text" autocomplete="username" maxlength="20" required>
+        </label>
+        <label>Your 4-digit PIN
+          <input id="auth-pin" type="password" inputmode="numeric" pattern="[0-9]{4}" maxlength="4" autocomplete="current-password" required>
+        </label>
+        <p class="notice" id="auth-notice" hidden></p>
+        <p class="error" id="auth-error" hidden></p>
+        <button type="submit" class="btn btn-primary btn-big" id="auth-submit">Let's Go</button>
+      </form>
+      <p class="hint">Same name and PIN as SpellMaster — one account for all games. Forgot your PIN? Ask a parent!</p>
+    </div>
+  </section>
+
+  <!-- First-time setup: pick a grade -->
+  <section class="screen" id="screen-setup" hidden>
+    <h1 class="logo small">🧮 MathMaster</h1>
+    <div class="card" id="setup-pick">
+      <h2>Pick your grade</h2>
+      <p class="muted">Parents: choose together! Topics follow the New Jersey math standards for each grade.</p>
+      <div class="grade-grid" id="setup-grades"></div>
+      <p class="hint" id="setup-msg" hidden></p>
+    </div>
+    <div class="card" id="setup-warmup" hidden>
+      <h2 id="warmup-title">Grade 5 it is! 🎉</h2>
+      <p class="muted">Want a quick warm-up check first? 8 questions to see what you already know — no pressure, nothing to lose.</p>
+      <button class="btn btn-primary" id="btn-warmup">⚡ Quick warm-up check</button>
+      <button class="btn btn-secondary" id="btn-skip-warmup">Skip — take me to my topics</button>
+    </div>
+    <button class="btn btn-ghost" id="btn-setup-back" hidden>← Back</button>
+  </section>
+
+  <!-- Topic map (home) -->
+  <section class="screen" id="screen-map" hidden>
+    <div class="map-head">
+      <div>
+        <h1 class="logo small left">🧮 MathMaster</h1>
+        <p class="map-sub">Hi <strong id="map-name"></strong>! <span class="pill pill-grade" id="map-grade-pill"></span></p>
+      </div>
+      <button class="btn-ghost-sm" id="btn-signout">Sign out</button>
+    </div>
+    <div class="card progress-card">
+      <div class="progress-row">
+        <span id="map-progress-text"></span>
+        <span id="map-streak"></span>
+      </div>
+      <div class="bar"><div class="bar-fill" id="map-progress-bar"></div></div>
+      <p class="map-legend">📘 learning &nbsp; ⭐ learned — review next day &nbsp; 🏆 mastered</p>
+    </div>
+    <p class="notice" id="map-msg" hidden></p>
+    <div id="map-domains"></div>
+    <div class="card quiz-card" id="map-quiz-card">
+      <h2>🎓 The Big Grade Quiz</h2>
+      <p class="muted" id="quiz-locked-text"></p>
+      <button class="btn btn-primary btn-big" id="btn-quiz" hidden>Take the Grade Quiz!</button>
+    </div>
+    <div class="home-row">
+      <button class="btn btn-secondary" id="btn-feedback">💌 Feedback</button>
+      <button class="btn btn-secondary" id="btn-change-grade">🎚️ Change grade</button>
+      <button class="btn btn-secondary" id="btn-admin" hidden>🛠️ Parent Panel</button>
+    </div>
+  </section>
+
+  <!-- Lesson -->
+  <section class="screen" id="screen-lesson" hidden>
+    <div class="game-top">
+      <span class="pill pill-round" id="lesson-topic-pill"></span>
+      <span class="pill" id="lesson-standards"></span>
+    </div>
+    <div class="card lesson-card">
+      <h2 id="lesson-slide-title"></h2>
+      <div id="lesson-slide"></div>
+      <button class="btn btn-hear" id="btn-lesson-say">🔊 Read it to me</button>
+      <div class="slide-nav">
+        <button class="btn btn-secondary" id="btn-slide-prev">← Back</button>
+        <div class="slide-dots" id="lesson-dots"></div>
+        <button class="btn btn-primary" id="btn-slide-next">Next →</button>
+      </div>
+    </div>
+    <div id="lesson-actions">
+      <button class="btn btn-primary btn-big" id="btn-lesson-practice" hidden>✏️ Practice Time! (10 questions)</button>
+      <button class="btn btn-primary btn-big" id="btn-lesson-review" hidden>⭐ Take the Review! (5 questions)</button>
+    </div>
+    <button class="btn btn-ghost" id="btn-lesson-back">🏠 Back to my topics</button>
+  </section>
+
+  <!-- Question set (practice / review / warm-up / quiz) -->
+  <section class="screen" id="screen-set" hidden>
+    <div class="game-top">
+      <span class="pill pill-round" id="set-pill"></span>
+      <span class="pill" id="set-progress"></span>
+    </div>
+    <div class="card game-card">
+      <div id="set-viz"></div>
+      <p id="set-q"></p>
+      <div id="set-mc" class="mc-grid"></div>
+      <form id="set-num-form" hidden>
+        <input id="set-input" type="text" autocomplete="off" autocapitalize="off" placeholder="Type your answer">
+        <button type="submit" class="btn btn-primary">Check ✔</button>
+      </form>
+      <div class="feedback" id="set-feedback" hidden></div>
+      <button class="btn btn-primary" id="btn-set-continue" hidden>Continue →</button>
+    </div>
+    <button class="btn btn-ghost" id="btn-set-exit">🏠 Exit</button>
+  </section>
+
+  <!-- Results -->
+  <section class="screen" id="screen-results" hidden>
+    <h1 class="logo small" id="res-title"></h1>
+    <div class="card">
+      <p class="final-score" id="res-summary"></p>
+      <p class="congrats" id="res-event" hidden></p>
+      <p class="error" id="res-save-error" hidden></p>
+      <ul class="word-results" id="res-list"></ul>
+    </div>
+    <div class="card" id="res-topics-card" hidden>
+      <h2>Topic by topic</h2>
+      <table class="table"><thead><tr><th>Topic</th><th>Score</th><th></th></tr></thead>
+        <tbody id="res-topics"></tbody></table>
+    </div>
+    <button class="btn btn-primary btn-big" id="btn-res-again" hidden></button>
+    <button class="btn btn-secondary" id="btn-res-map">🏠 Back to my topics</button>
+  </section>
+
+  <!-- Feedback -->
+  <section class="screen" id="screen-feedback" hidden>
+    <h1 class="logo small">💌 Feedback</h1>
+    <div class="card">
+      <h2>Tell us what you think!</h2>
+      <label>Found a problem? Have an idea? Like something?
+        <textarea id="feedback-text" rows="5" maxlength="2000"></textarea>
+      </label>
+      <p class="error" id="feedback-msg" hidden></p>
+      <button class="btn btn-primary" id="btn-send-feedback">Send 💌</button>
+    </div>
+    <button class="btn btn-ghost" id="btn-feedback-back">← Back</button>
+  </section>
+
+  <!-- Parent / admin panel -->
+  <section class="screen" id="screen-admin" hidden>
+    <h1 class="logo small">🛠️ Parent Panel</h1>
+    <div class="tabs">
+      <button class="tab active" data-atab="progress">Progress</button>
+      <button class="tab" data-atab="daily">Activity</button>
+      <button class="tab" data-atab="feedback">Feedback</button>
+    </div>
+    <div class="card" id="atab-progress">
+      <table class="table"><thead><tr><th>Kid</th><th>Grade</th><th>🏆</th><th>⭐</th><th>📘</th><th>Sets</th><th>Last</th></tr></thead>
+        <tbody id="admin-players"></tbody></table>
+      <p class="muted" id="admin-progress-empty" hidden>No math players yet.</p>
+    </div>
+    <div class="card" id="atab-daily" hidden>
+      <table class="table"><thead><tr><th>Day</th><th>Kid</th><th>Sets</th><th>Correct</th></tr></thead>
+        <tbody id="admin-daily"></tbody></table>
+      <p class="muted" id="admin-daily-empty" hidden>No activity in the last 14 days.</p>
+    </div>
+    <div class="card" id="atab-feedback" hidden>
+      <table class="table"><thead><tr><th>Date</th><th>Who</th><th>Game</th><th>Message</th></tr></thead>
+        <tbody id="admin-feedback"></tbody></table>
+      <p class="muted" id="admin-feedback-empty" hidden>No feedback yet.</p>
+    </div>
+    <button class="btn btn-ghost" id="btn-admin-back">← Back</button>
+  </section>
+
+</div>
+<script src="gen-utils.js"></script>
+<script src="viz.js"></script>
+<script src="curriculum.js"></script>
+<script src="content/grade1.js"></script>
+<script src="content/grade5.js"></script>
+<script src="app.js"></script>
+</body>
+</html>
