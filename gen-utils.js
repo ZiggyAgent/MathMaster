@@ -56,7 +56,12 @@ function fracHtml(n, d) { return `<span class="frac"><span>${n}</span><span>${d}
 const KID_NAMES = ["Maya", "Leo", "Aria", "Noah", "Zoe", "Eli", "Luna", "Max", "Ivy", "Sam", "Mia", "Ben", "Nora", "Jack", "Ella", "Omar", "Ruby", "Theo"];
 const SMALL_THINGS = [["apple", "🍎"], ["star", "⭐"], ["ball", "⚽"], ["cookie", "🍪"], ["flower", "🌸"], ["fish", "🐠"], ["book", "📕"], ["balloon", "🎈"], ["strawberry", "🍓"], ["duck", "🦆"], ["cupcake", "🧁"], ["rocket", "🚀"]];
 function thing() { return pick(SMALL_THINGS); }
-function plural(word, n) { return n === 1 ? word : word + "s"; }
+function plural(word, n) {
+  if (n === 1) return word;
+  if (word === "fish") return "fish";
+  if (/[^aeiou]y$/.test(word)) return word.slice(0, -1) + "ies";
+  return word + "s";
+}
 function moneyStr(cents) {
   const d = Math.floor(cents / 100), c = cents % 100;
   if (c === 0) return `$${d}`;
