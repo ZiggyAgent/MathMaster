@@ -161,6 +161,16 @@ textarea { resize: vertical; font-size: 1rem; }
 .feedback.bad { background: var(--bad-bg); color: var(--bad-ink); }
 .feedback .fb-head { font-size: 1.15rem; font-weight: 800; display: block; margin-bottom: 4px; }
 
+/* Walkthrough */
+.walk-problem { font-size: 1.7rem; font-weight: 800; color: var(--primary-dark); background: var(--primary-soft); border-radius: 12px; padding: 12px; margin: 0 0 6px; }
+#walk-step { font-size: 1.15rem; font-weight: 600; line-height: 1.5; margin: 12px 0; }
+#walk-input { font-size: 1.35rem; text-align: center; }
+
+/* Install help */
+.install-list { text-align: left; font-size: 1.05rem; line-height: 1.6; padding-left: 22px; margin: 14px 0; }
+.install-list li { margin: 8px 0; }
+.ikey { display: inline-block; background: var(--primary-soft); border: 1px solid #c7d2fe; border-radius: 6px; padding: 0 5px; }
+
 /* Results */
 .final-score { text-align: center; font-size: 1.25rem; margin: 4px 0 16px; }
 .word-results { list-style: none; padding: 0; margin: 0; }

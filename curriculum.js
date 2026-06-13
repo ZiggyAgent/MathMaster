@@ -256,6 +256,16 @@ const CURRICULUM = {
 const CONTENT = {};
 function registerContent(map) { Object.assign(CONTENT, map); }
 
+// Guided step-by-step "walkthroughs" (Tier A show-your-work) attach to topics
+// where the *method* matters — see content/walkthroughs.js. Each value is a
+// function returning { problem, viz?, steps:[{prompt, answer, hint, type?,
+// choices?}], answer }. Used both in the lesson ("Try it step by step") and as
+// optional help when a kid misses a practice question.
+function registerWalkthroughs(map) {
+  for (const id of Object.keys(map)) if (CONTENT[id]) CONTENT[id].walkthrough = map[id];
+}
+function hasWalkthrough(topicId) { return !!(CONTENT[topicId] && CONTENT[topicId].walkthrough); }
+
 function gradeTopics(grade) {
   return CURRICULUM[grade].domains.flatMap((d) => d.topics);
 }

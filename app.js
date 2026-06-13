@@ -323,6 +323,7 @@ function renderSlide() {
   $("btn-slide-next").hidden = slide === slides.length - 1;
   const st = stateOf(topic.id);
   const last = slide === slides.length - 1;
+  $("btn-lesson-walk").hidden = !(last && hasWalkthrough(topic.id));
   $("btn-lesson-practice").hidden = !last;
   $("btn-lesson-review").hidden = !(last && st.state === "learned" && st.review_ready);
 }
@@ -333,6 +334,122 @@ $("btn-lesson-say").addEventListener("click", () => say(CONTENT[lessonCtx.topic.
 $("btn-lesson-back").addEventListener("click", () => { if (canSpeak) speechSynthesis.cancel(); enterMap(); });
 $("btn-lesson-practice").addEventListener("click", () => startSet("practice", lessonCtx.topic));
 $("btn-lesson-review").addEventListener("click", () => startSet("review", lessonCtx.topic));
+$("btn-lesson-walk").addEventListener("click", () => startWalkthrough(lessonCtx.topic, () => show("screen-lesson")));
+
+// ---------------------------------------------------------------------------
+// Guided walkthrough (Tier A show-your-work): step the kid through the method,
+// giving feedback on which step went wrong. Unscored — pure teaching/help.
+// ---------------------------------------------------------------------------
+let walk = null;
+
+function startWalkthrough(topic, onDone) {
+  if (canSpeak) speechSynthesis.cancel();
+  const w = CONTENT[topic.id].walkthrough();
+  walk = { topic, ...w, index: 0, onDone };
+  $("walk-problem").textContent = w.problem;
+  $("walk-viz").innerHTML = w.viz || "";
+  show("screen-walk");
+  renderWalkStep();
+}
+
+let walkAdvancing = false;
+function renderWalkStep() {
+  const s = walk.steps[walk.index];
+  walkAdvancing = false;
+  $("walk-progress").textContent = `Step ${walk.index + 1} of ${walk.steps.length}`;
+  $("walk-step").innerHTML = s.prompt;
+  $("walk-feedback").hidden = true;
+  $("btn-walk-continue").hidden = true;
+  const mcWrap = $("walk-mc");
+  mcWrap.innerHTML = "";
+  if (s.type === "mc") {
+    $("walk-num-form").hidden = true;
+    mcWrap.hidden = false;
+    for (const choice of s.choices) {
+      const b = document.createElement("button");
+      b.type = "button";
+      b.className = "mc-btn";
+      b.innerHTML = escapeHtml(String(choice));
+      b.addEventListener("click", () => answerWalk(String(choice), b));
+      mcWrap.appendChild(b);
+    }
+  } else {
+    mcWrap.hidden = true;
+    $("walk-num-form").hidden = false;
+    $("walk-input").value = "";
+    $("walk-input").disabled = false;
+    $("walk-input").focus();
+  }
+}
+
+$("walk-num-form").addEventListener("submit", (e) => {
+  e.preventDefault();
+  const v = $("walk-input").value.trim();
+  if (!v || walkAdvancing) return;
+  answerWalk(v, null);
+});
+
+function answerWalk(givenRaw, btn) {
+  if (walkAdvancing) return;
+  walkAdvancing = true;
+  const s = walk.steps[walk.index];
+  const correct = sameValue(givenRaw, s.answer);
+  const fb = $("walk-feedback");
+  if (s.type === "mc") {
+    $("walk-mc").querySelectorAll(".mc-btn").forEach((b) => {
+      b.disabled = true;
+      if (sameValue(b.textContent, s.answer)) b.classList.add(correct ? "picked-good" : "reveal");
+    });
+    if (btn && !correct) btn.classList.add("picked-bad");
+  } else {
+    $("walk-input").disabled = true;
+  }
+  if (correct) {
+    fb.className = "feedback good";
+    fb.innerHTML = `<span class="fb-head">✅ Yes!</span>`;
+    fb.hidden = false;
+    setTimeout(advanceWalk, 850);
+  } else {
+    fb.className = "feedback bad";
+    fb.innerHTML = `<span class="fb-head">❌ This step is ${escapeHtml(String(s.answer))}</span>${escapeHtml(s.hint)}`;
+    fb.hidden = false;
+    $("btn-walk-continue").hidden = false;
+    $("btn-walk-continue").focus();
+  }
+}
+
+function advanceWalk() {
+  if (!walk) return;
+  walk.index++;
+  if (walk.index < walk.steps.length) { renderWalkStep(); return; }
+  // solved
+  const fb = $("walk-feedback");
+  $("walk-step").innerHTML = `<strong>${escapeHtml(walk.problem)} = ${escapeHtml(String(walk.answer))}</strong>`;
+  $("walk-mc").hidden = true;
+  $("walk-num-form").hidden = true;
+  fb.className = "feedback good";
+  fb.innerHTML = `<span class="fb-head">🎉 You solved it, step by step!</span>That's the method — try it yourself now.`;
+  fb.hidden = false;
+  $("walk-progress").textContent = "Done!";
+  $("btn-walk-continue").hidden = false;
+  $("btn-walk-continue").textContent = "Got it →";
+  $("btn-walk-continue").focus();
+}
+
+$("btn-walk-continue").addEventListener("click", () => {
+  if (walk && walk.index >= walk.steps.length) {
+    const done = walk.onDone; walk = null;
+    $("btn-walk-continue").textContent = "Continue →";
+    if (done) done();
+  } else {
+    advanceWalk();
+  }
+});
+$("btn-walk-exit").addEventListener("click", () => {
+  const done = walk && walk.onDone; walk = null;
+  $("btn-walk-continue").textContent = "Continue →";
+  if (done) done(); else enterMap();
+});
 
 // ---------------------------------------------------------------------------
 // Question sets
@@ -402,6 +519,7 @@ function renderQuestion() {
   $("set-viz").innerHTML = it.viz || "";
   $("set-q").innerHTML = it.q;
   $("set-feedback").hidden = true;
+  $("btn-set-walk").hidden = true;
   $("btn-set-continue").hidden = true;
   const mcWrap = $("set-mc");
   mcWrap.innerHTML = "";
@@ -462,10 +580,22 @@ function answer(givenRaw, btn) {
     fb.className = "feedback bad";
     fb.innerHTML = `<span class="fb-head">❌ Not quite — it's ${escapeHtml(String(it.answer))}</span>${escapeHtml(it.explain)}`;
     fb.hidden = false;
+    // Offer a step-by-step walkthrough on a fresh problem of the same skill —
+    // only during practice/review (not warm-up or the graded quiz).
+    const offerWalk = (session.kind === "practice" || session.kind === "review") && hasWalkthrough(it.topic_id);
+    $("btn-set-walk").hidden = !offerWalk;
     $("btn-set-continue").hidden = false;
     $("btn-set-continue").focus();
   }
 }
+
+$("btn-set-walk").addEventListener("click", () => {
+  const it = session.items[session.index];
+  const topic = topicById(it.topic_id);
+  // running a walkthrough leaves the set screen DOM intact; returning just
+  // re-shows it with the feedback + Continue still in place.
+  startWalkthrough(topic, () => { $("btn-set-walk").hidden = true; show("screen-set"); });
+});
 
 function advance() {
   if (!session) return;
@@ -690,6 +820,60 @@ $("btn-admin").addEventListener("click", async () => {
   }
 });
 $("btn-admin-back").addEventListener("click", () => enterMap());
+
+// ---------------------------------------------------------------------------
+// PWA install: capture the Android/Chrome prompt when offered; always provide
+// platform-specific manual steps (iOS never fires the event — you must use
+// Share → Add to Home Screen).
+// ---------------------------------------------------------------------------
+let deferredInstall = null;
+window.addEventListener("beforeinstallprompt", (e) => { e.preventDefault(); deferredInstall = e; });
+
+function isStandalone() {
+  return window.matchMedia("(display-mode: standalone)").matches || window.navigator.standalone === true;
+}
+
+$("btn-install").addEventListener("click", () => {
+  const steps = $("install-steps");
+  const ua = navigator.userAgent;
+  const isIOS = /iPad|iPhone|iPod/.test(ua) || (/Mac/.test(ua) && "ontouchend" in document);
+  const isAndroid = /Android/.test(ua);
+  $("btn-install-now").hidden = !deferredInstall;
+  if (isStandalone()) {
+    steps.innerHTML = `<p class="notice">✅ You're already using the installed app — nice!</p>`;
+    $("btn-install-now").hidden = true;
+  } else if (isIOS) {
+    steps.innerHTML = `<ol class="install-list">
+      <li>Tap the <strong>Share</strong> button <span class="ikey">⬆️</span> at the bottom of Safari.</li>
+      <li>Scroll down and tap <strong>Add to Home Screen</strong> <span class="ikey">➕</span>.</li>
+      <li>Tap <strong>Add</strong> — the 🧮 MathMaster icon appears on your home screen!</li></ol>
+      <p class="muted">On an iPhone or iPad this only works in <strong>Safari</strong>.</p>`;
+  } else if (isAndroid) {
+    steps.innerHTML = `<ol class="install-list">
+      <li>Tap <strong>Install now</strong> above${deferredInstall ? "" : ", or open the <strong>⋮</strong> menu"}.</li>
+      <li>If you used the menu, choose <strong>Install app</strong> (or <strong>Add to Home screen</strong>).</li>
+      <li>Confirm — the 🧮 icon lands on your home screen.</li></ol>`;
+  } else {
+    steps.innerHTML = `<ol class="install-list">
+      <li>Click <strong>Install now</strong> above, or the <strong>install icon</strong> in your browser's address bar.</li>
+      <li>Confirm to add MathMaster as an app.</li></ol>
+      <p class="muted">Works in Chrome, Edge, and other Chromium browsers.</p>`;
+  }
+  show("screen-install");
+});
+
+$("btn-install-now").addEventListener("click", async () => {
+  if (!deferredInstall) return;
+  deferredInstall.prompt();
+  await deferredInstall.userChoice;
+  deferredInstall = null;
+  $("btn-install-now").hidden = true;
+});
+$("btn-install-back").addEventListener("click", () => enterMap());
+
+if ("serviceWorker" in navigator) {
+  window.addEventListener("load", () => navigator.serviceWorker.register("sw.js").catch(() => {}));
+}
 
 // ---------------------------------------------------------------------------
 // Boot

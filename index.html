@@ -8,6 +8,12 @@
   <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="style.css">
   <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🧮</text></svg>">
+  <link rel="manifest" href="manifest.webmanifest">
+  <meta name="theme-color" content="#4f46e5">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="apple-mobile-web-app-title" content="MathMaster">
+  <link rel="apple-touch-icon" href="icons/icon-180.png">
 </head>
 <body>
 <div class="app">
@@ -80,6 +86,18 @@
       <button class="btn btn-secondary" id="btn-change-grade">🎚️ Change grade</button>
       <button class="btn btn-secondary" id="btn-admin" hidden>🛠️ Admin</button>
     </div>
+    <button class="btn btn-ghost" id="btn-install">📲 Add MathMaster to your home screen</button>
+  </section>
+
+  <!-- Install help -->
+  <section class="screen" id="screen-install" hidden>
+    <h1 class="logo small">📲 Get the app</h1>
+    <div class="card">
+      <p class="muted">Add MathMaster to your home screen for a one-tap icon — it opens full-screen like a real app and works even with a shaky connection.</p>
+      <button class="btn btn-primary" id="btn-install-now" hidden>Install now</button>
+      <div id="install-steps"></div>
+    </div>
+    <button class="btn btn-ghost" id="btn-install-back">← Back</button>
   </section>
 
   <!-- Lesson -->
@@ -99,6 +117,7 @@
       </div>
     </div>
     <div id="lesson-actions">
+      <button class="btn btn-secondary btn-big" id="btn-lesson-walk" hidden>🧭 Try it step by step</button>
       <button class="btn btn-primary btn-big" id="btn-lesson-practice" hidden>✏️ Practice Time! (10 questions)</button>
       <button class="btn btn-primary btn-big" id="btn-lesson-review" hidden>⭐ Take the Review! (5 questions)</button>
     </div>
@@ -120,9 +139,31 @@
         <button type="submit" class="btn btn-primary">Check ✔</button>
       </form>
       <div class="feedback" id="set-feedback" hidden></div>
+      <button class="btn btn-secondary" id="btn-set-walk" hidden>🧭 Walk me through one like it</button>
       <button class="btn btn-primary" id="btn-set-continue" hidden>Continue →</button>
     </div>
     <button class="btn btn-ghost" id="btn-set-exit">🏠 Exit</button>
+  </section>
+
+  <!-- Guided walkthrough (Tier A show-your-work) -->
+  <section class="screen" id="screen-walk" hidden>
+    <div class="game-top">
+      <span class="pill pill-round">🧭 Step by step</span>
+      <span class="pill" id="walk-progress"></span>
+    </div>
+    <div class="card game-card">
+      <p class="walk-problem" id="walk-problem"></p>
+      <div id="walk-viz"></div>
+      <p id="walk-step"></p>
+      <div id="walk-mc" class="mc-grid"></div>
+      <form id="walk-num-form" hidden>
+        <input id="walk-input" type="text" autocomplete="off" autocapitalize="off" placeholder="Type your answer">
+        <button type="submit" class="btn btn-primary">Check ✔</button>
+      </form>
+      <div class="feedback" id="walk-feedback" hidden></div>
+      <button class="btn btn-primary" id="btn-walk-continue" hidden>Continue →</button>
+    </div>
+    <button class="btn btn-ghost" id="btn-walk-exit">Skip the walkthrough</button>
   </section>
 
   <!-- Results -->
@@ -190,6 +231,7 @@
 <script src="curriculum.js"></script>
 <script src="content/grade1.js"></script>
 <script src="content/grade5.js"></script>
+<script src="content/walkthroughs.js"></script>
 <script src="app.js"></script>
 </body>
 </html>
